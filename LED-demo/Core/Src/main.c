@@ -43,7 +43,7 @@
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+#define RX_BUF_SIZE 64
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,6 +57,10 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t rx_byte;
+uint8_t rx_buf[RX_BUF_SIZE];
+volatile uint16_t rx_head = 0;
+volatile uint16_t rx_tail = 0;
+volatile uint32_t overflow_cnt = 0;
 /* USER CODE END 0 */
 
 /**
@@ -90,11 +94,10 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
-
-
-  HAL_UART_Transmit(&huart1,(uint8_t *)"hello",7,100);
   HAL_UART_Receive_IT(&huart1,&rx_byte,1);
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,6 +108,13 @@ int main(void)
 	  HAL_Delay(1000);
 	  HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13,GPIO_PIN_SET);
 	  HAL_Delay(1000);
+	  while(rx_head != rx_tail)
+	  {
+		  uint8_t b = rx_buf[rx_tail];
+		  rx_tail = (rx_tail+1)%RX_BUF_SIZE;
+		  HAL_UART_Transmit(&huart1,&b,1,100);
+
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -219,10 +229,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART1)
 	{
-		HAL_UART_Transmit(&huart1,&rx_byte,1,100);
+		if((rx_head+1)%RX_BUF_SIZE != rx_tail)
+		{
+			rx_buf[rx_head] = rx_byte;
+			rx_head = (rx_head+1)%RX_BUF_SIZE;
+		}
 		HAL_UART_Receive_IT(&huart1,&rx_byte,1);
 	}
 
+}
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == USART1)
+	{
+		overflow_cnt++;
+		__HAL_UART_CLEAR_OREFLAG(huart);
+		HAL_UART_Receive_IT(&huart1,&rx_byte,1);
+	}
 }
 /* USER CODE END 4 */
 
