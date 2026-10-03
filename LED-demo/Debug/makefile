@@ -61,7 +61,7 @@ main-build: LED-demo.elf secondary-outputs
 
 # Tool invocations
 LED-demo.elf LED-demo.map: $(OBJS) $(USER_OBJS) D:\CUBEIDE\learn\LED-demo\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "LED-demo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\CUBEIDE\learn\LED-demo\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LED-demo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "LED-demo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"D:\CUBEIDE\learn\LED-demo\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LED-demo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
